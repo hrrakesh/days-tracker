@@ -3,363 +3,101 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Days Tracker & Date Calculator</title>
+  <title>Days Tracker</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
-  <!-- App Container Layout -->
   <div class="app-layout">
 
-    <!-- Mobile Header Bar -->
+    <!-- Mobile Top Bar -->
     <header class="mobile-bar">
-      <button class="icon-btn" id="sidebarToggle" aria-label="Toggle Sidebar">
-        <span class="hamburger-icon">☰</span>
-      </button>
-      <div class="mobile-title">
-        <span class="logo-icon">📅</span>
-        <span>Days Tracker</span>
-      </div>
-      <div class="today-chip-mobile" id="mobileTodayBadge">Today</div>
+      <button class="menu-btn" id="sidebarToggle" aria-label="Toggle Sidebar">☰</button>
+      <span class="mobile-title">📅 Days Tracker</span>
+      <span class="today-tag" id="mobileTodayTag">Today</span>
     </header>
 
-    <!-- Sidebar Backdrop for Mobile -->
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
-    <!-- Sidebar -->
+    <!-- Left Sidebar: Date and Present Date Section -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <div class="brand">
-          <div class="icon">📅</div>
+          <div class="brand-icon">📅</div>
           <div>
-            <h1 class="brand-title">Days Tracker</h1>
-            <p class="brand-subtitle">Track days to present date</p>
+            <h2>Days Tracker</h2>
+            <p>From Start Date to Today</p>
           </div>
         </div>
-        <button class="close-sidebar-btn" id="sidebarCloseBtn" aria-label="Close sidebar">✕</button>
+        <button class="close-btn" id="sidebarCloseBtn" aria-label="Close">✕</button>
       </div>
 
-      <!-- Current Date Indicator (Always Present Date) -->
+      <!-- Date Section -->
       <div class="sidebar-section">
-        <div class="present-date-card">
-          <div class="card-tag">
-            <span class="pulse-dot"></span>
-            <span>Present Date (Current)</span>
-          </div>
-          <div class="present-date-val" id="presentDateDisplay">Loading today...</div>
-          <div class="present-date-sub" id="presentDateFormatted">Real-time local date</div>
-        </div>
-      </div>
-
-      <!-- Start Date Input Form -->
-      <div class="sidebar-section">
-        <h2 class="section-heading">Track New or Current Session</h2>
-
-        <div class="form-group">
-          <label for="sessionTitle">Session Name / Label</label>
-          <input 
-            type="text" 
-            id="sessionTitle" 
-            placeholder="e.g., Project Start, Habit, Milestone..." 
-            autocomplete="off"
-          />
-        </div>
-
-        <div class="form-group">
+        <div class="input-group">
           <label for="startDate">Start Date</label>
           <input type="date" id="startDate" />
         </div>
 
-        <!-- Quick Presets -->
-        <div class="presets-wrapper">
-          <span class="presets-label">Quick Presets:</span>
-          <div class="preset-buttons">
-            <button type="button" class="preset-btn" data-preset="start-of-year">Jan 1st</button>
-            <button type="button" class="preset-btn" data-preset="30-days">30d Ago</button>
-            <button type="button" class="preset-btn" data-preset="100-days">100d Ago</button>
-            <button type="button" class="preset-btn" data-preset="1-year">1y Ago</button>
-            <button type="button" class="preset-btn" data-preset="today">Today</button>
+        <div class="input-group">
+          <label for="presentDate">Present Date (Current)</label>
+          <input type="date" id="presentDate" readonly />
+          <div class="live-indicator">
+            <span class="pulse-dot"></span>
+            <span id="presentDateLabel">Live Present Date</span>
           </div>
         </div>
 
-        <!-- Session Actions -->
-        <div class="action-buttons">
-          <button class="btn btn-primary" id="saveSessionBtn">
-            <span>💾</span> Save Session
-          </button>
-          <button class="btn btn-secondary" id="resetTrackerBtn">
-            <span>🔄</span> Reset
-          </button>
+        <div class="btn-row">
+          <button class="btn btn-today" id="setTodayBtn">↻ Set to Today</button>
+          <button class="btn btn-save" id="saveSessionBtn">💾 Save</button>
         </div>
       </div>
 
-      <!-- Saved Sessions (LocalStorage) Section -->
-      <div class="sidebar-section saved-sessions-section">
+      <!-- Saved Sessions (LocalStorage) -->
+      <div class="sidebar-section saved-section">
         <div class="saved-header">
-          <h2 class="section-heading">
-            Saved Sessions (<span id="savedCount">0</span>)
-          </h2>
-          <button class="clear-btn" id="clearAllSessionsBtn" title="Clear all saved sessions">
-            Clear All
-          </button>
+          <span class="saved-title">Saved Sessions (<span id="savedCount">0</span>)</span>
+          <button class="clear-link" id="clearSessionsBtn">Clear</button>
         </div>
-
-        <div class="sessions-list" id="sessionsList">
-          <!-- Populated dynamically from localStorage -->
-          <div class="empty-state" id="emptyState">
-            No saved sessions yet. Choose a start date and click <strong>"Save Session"</strong> to store it in your browser!
-          </div>
+        <div class="saved-list" id="savedList">
+          <div class="empty-hint" id="emptyHint">No saved sessions yet. Pick a date and click Save!</div>
         </div>
       </div>
 
       <div class="sidebar-footer">
-        <span>⚡ Auto-saved in browser localStorage</span>
+        ⚡ Stored in browser localStorage
       </div>
     </aside>
 
-    <!-- Main Content Area -->
+    <!-- Middle Part: As Old Only Simple -->
     <main class="main-content">
+      <div class="container">
+        <section class="card">
 
-      <!-- Navigation / Mode Tabs -->
-      <div class="top-nav">
-        <div class="nav-tabs">
-          <button class="tab-btn active" id="tabPresentTracker">
-            🎯 Present Date Tracker
-          </button>
-          <button class="tab-btn" id="tabTwoDateCalc">
-            ⚖️ Custom 2-Date Comparison
-          </button>
-        </div>
-
-        <div class="sync-badge">
-          <span class="pulse-dot"></span>
-          <span>Synced with Present Date</span>
-        </div>
-      </div>
-
-      <!-- VIEW 1: Present Date Tracker (Main Requested Feature) -->
-      <div class="view-panel" id="presentTrackerView">
-
-        <!-- Active Session Header Banner -->
-        <div class="session-banner">
-          <div class="banner-details">
-            <div class="banner-badge" id="directionBadge">Calculating difference...</div>
-            <h2 class="banner-title" id="activeSessionTitle">Days to Present Date</h2>
-            <div class="banner-range">
-              <span class="range-pill">Start: <strong id="bannerStartDate">—</strong></span>
-              <span class="range-arrow">➔</span>
-              <span class="range-pill current-pill">Present Date: <strong id="bannerCurrentDate">—</strong></span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Hero Metric: Total Days Counter -->
-        <section class="hero-card">
-          <div class="hero-eyebrow">TOTAL ELAPSED TIME</div>
-          <div class="hero-number-wrap">
-            <span class="hero-number" id="heroTotalDays">—</span>
-            <span class="hero-unit" id="heroDaysLabel">Days</span>
-          </div>
-          <p class="hero-human-summary" id="heroHumanSummary">
-            Select a start date in the sidebar to calculate.
-          </p>
-        </section>
-
-        <!-- SEPARATE SECTIONS FOR YEARS, MONTHS, WEEKS, DAYS -->
-        <div class="sections-container">
-          <h2 class="sub-header-title">Detailed Breakdown by Time Unit</h2>
-
-          <div class="breakdown-grid">
-
-            <!-- 1. YEARS SECTION -->
-            <section class="stat-card year-card">
-              <div class="stat-card-header">
-                <div class="stat-icon year-icon">📅</div>
-                <div>
-                  <h3 class="stat-card-title">Years Section</h3>
-                  <p class="stat-card-subtitle">Calendar & Decimal Years</p>
-                </div>
-              </div>
-
-              <div class="stat-main-metric">
-                <span class="stat-value" id="yearMainValue">—</span>
-                <span class="stat-unit" id="yearMainLabel">Years</span>
-              </div>
-
-              <div class="stat-details-list">
-                <div class="stat-detail-item">
-                  <span class="stat-detail-label">Exact Decimal</span>
-                  <span class="stat-detail-val" id="yearDecimalVal">—</span>
-                </div>
-                <div class="stat-detail-item">
-                  <span class="stat-detail-label">Next Year Milestone</span>
-                  <span class="stat-detail-val" id="yearDaysToNextVal">—</span>
-                </div>
-              </div>
-
-              <!-- Year Progress Bar -->
-              <div class="progress-container">
-                <div class="progress-labels">
-                  <span>Year Milestone Progress</span>
-                  <span id="yearProgressText">0%</span>
-                </div>
-                <div class="progress-bar-bg">
-                  <div class="progress-bar-fill year-fill" id="yearProgressBar" style="width: 0%"></div>
-                </div>
-              </div>
-            </section>
-
-            <!-- 2. MONTHS SECTION -->
-            <section class="stat-card month-card">
-              <div class="stat-card-header">
-                <div class="stat-icon month-icon">🌙</div>
-                <div>
-                  <h3 class="stat-card-title">Months Section</h3>
-                  <p class="stat-card-subtitle">Total & Remainder Months</p>
-                </div>
-              </div>
-
-              <div class="stat-main-metric">
-                <span class="stat-value" id="monthMainValue">—</span>
-                <span class="stat-unit" id="monthMainLabel">Months</span>
-              </div>
-
-              <div class="stat-details-list">
-                <div class="stat-detail-item">
-                  <span class="stat-detail-label">Calendar Breakdown</span>
-                  <span class="stat-detail-val" id="monthCalendarBreakdown">—</span>
-                </div>
-                <div class="stat-detail-item">
-                  <span class="stat-detail-label">Quarters Elapsed</span>
-                  <span class="stat-detail-val" id="monthQuartersVal">—</span>
-                </div>
-              </div>
-
-              <!-- Month Progress Bar -->
-              <div class="progress-container">
-                <div class="progress-labels">
-                  <span>Current Month Days</span>
-                  <span id="monthProgressText">0%</span>
-                </div>
-                <div class="progress-bar-bg">
-                  <div class="progress-bar-fill month-fill" id="monthProgressBar" style="width: 0%"></div>
-                </div>
-              </div>
-            </section>
-
-            <!-- 3. WEEKS SECTION -->
-            <section class="stat-card week-card">
-              <div class="stat-card-header">
-                <div class="stat-icon week-icon">📆</div>
-                <div>
-                  <h3 class="stat-card-title">Weeks Section</h3>
-                  <p class="stat-card-subtitle">Full Weeks & Day Remainders</p>
-                </div>
-              </div>
-
-              <div class="stat-main-metric">
-                <span class="stat-value" id="weekMainValue">—</span>
-                <span class="stat-unit" id="weekMainLabel">Weeks</span>
-              </div>
-
-              <div class="stat-details-list">
-                <div class="stat-detail-item">
-                  <span class="stat-detail-label">Remaining Days</span>
-                  <span class="stat-detail-val" id="weekRemainderDays">—</span>
-                </div>
-                <div class="stat-detail-item">
-                  <span class="stat-detail-label">Weekdays (Mon-Fri)</span>
-                  <span class="stat-detail-val" id="weekWeekdaysVal">—</span>
-                </div>
-                <div class="stat-detail-item">
-                  <span class="stat-detail-label">Weekend Days (Sat-Sun)</span>
-                  <span class="stat-detail-val" id="weekWeekendsVal">—</span>
-                </div>
-              </div>
-            </section>
-
-            <!-- 4. DAYS SECTION -->
-            <section class="stat-card day-card">
-              <div class="stat-card-header">
-                <div class="stat-icon day-icon">☀️</div>
-                <div>
-                  <h3 class="stat-card-title">Days Section</h3>
-                  <p class="stat-card-subtitle">Full Days & Time Precision</p>
-                </div>
-              </div>
-
-              <div class="stat-main-metric">
-                <span class="stat-value" id="dayMainValue">—</span>
-                <span class="stat-unit" id="dayMainLabel">Total Days</span>
-              </div>
-
-              <div class="stat-details-list">
-                <div class="stat-detail-item">
-                  <span class="stat-detail-label">Total Hours</span>
-                  <span class="stat-detail-val" id="dayHoursVal">—</span>
-                </div>
-                <div class="stat-detail-item">
-                  <span class="stat-detail-label">Total Minutes</span>
-                  <span class="stat-detail-val" id="dayMinutesVal">—</span>
-                </div>
-                <div class="stat-detail-item">
-                  <span class="stat-detail-label">Start Day of Week</span>
-                  <span class="stat-detail-val" id="dayStartDOW">—</span>
-                </div>
-              </div>
-            </section>
-
-          </div>
-        </div>
-
-        <!-- Human Summary Card -->
-        <section class="summary-pill-card">
-          <div class="summary-icon">💡</div>
-          <div class="summary-text" id="summaryCombinedSentence">
-            Loading duration breakdown...
-          </div>
-        </section>
-
-      </div>
-
-      <!-- VIEW 2: Custom Two-Date Comparison (Secondary mode) -->
-      <div class="view-panel hidden" id="twoDateCalcView">
-        <div class="card two-date-card">
           <header class="header">
-            <div class="icon">⚖️</div>
-            <h1>Two-Date Difference</h1>
-            <p class="subtitle">
-              Calculate exact difference between any two custom dates
+            <div class="icon">📅</div>
+            <h1>Days Tracker</h1>
+            <p class="subtitle" id="subtitle">
+              Calculated from Start Date to Present Date
             </p>
           </header>
 
-          <div class="inputs">
-            <div class="input-group">
-              <label for="date1">Date to Compare</label>
-              <input type="date" id="date1" />
-            </div>
-
-            <div class="input-group">
-              <label for="date2">Reference Date</label>
-              <input type="date" id="date2" />
-            </div>
-          </div>
-
-          <button class="today-btn" id="todayBtn">
-            ↻ Set Reference Date to Today
-          </button>
-
           <div class="result">
+
             <div class="direction" id="direction">
               Select a date to calculate
             </div>
 
             <div class="main-result">
               <div class="main-number" id="mainNumber">—</div>
-              <div class="main-label" id="mainLabel">Days</div>
+              <div class="main-label" id="mainLabel">
+                Days
+              </div>
             </div>
 
             <div class="details">
+
               <div class="detail">
                 <div class="detail-number" id="weeks">—</div>
                 <div class="detail-label">Weeks</div>
@@ -379,15 +117,21 @@
                 <div class="detail-number" id="years">—</div>
                 <div class="detail-label">Years</div>
               </div>
+
             </div>
 
             <div class="calendar-result" id="calendarResult">
               Choose a date to see the result.
             </div>
-          </div>
-        </div>
-      </div>
 
+          </div>
+
+          <div class="footer">
+            Auto-synced with present date & stored in localStorage
+          </div>
+
+        </section>
+      </div>
     </main>
 
   </div>
