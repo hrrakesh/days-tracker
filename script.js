@@ -6,8 +6,10 @@ const STORAGE_SAVED_DATES_KEY = "days_tracker_saved_dates";
 const startDateInput = document.getElementById("startDate");
 const presentDateInput = document.getElementById("presentDate");
 const presentDateLabel = document.getElementById("presentDateLabel");
+const presentBadge = document.getElementById("presentBadge");
+const pulseDot = document.getElementById("pulseDot");
+const liveIndicator = document.getElementById("liveIndicator");
 const mobileTodayTag = document.getElementById("mobileTodayTag");
-const setTodayBtn = document.getElementById("setTodayBtn");
 const saveSessionBtn = document.getElementById("saveSessionBtn");
 const clearSessionsBtn = document.getElementById("clearSessionsBtn");
 const savedList = document.getElementById("savedList");
@@ -47,11 +49,70 @@ function parseDate(value) {
 
 // Format short date for display
 function formatShortDate(date) {
+  if (!date) return "";
   return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric"
   });
+}
+
+// Get today formatted as YYYY-MM-DD
+function getTodayFormatted() {
+  return formatDate(new Date());
+}
+
+// Check if presentDateInput is set to current date
+function isPresentDateToday() {
+  return presentDateInput.value === getTodayFormatted();
+}
+
+// Update Present Date UI (Blinking Dot, Label, Badge)
+function updatePresentDateUI() {
+  const today = new Date();
+  const isToday = isPresentDateToday();
+
+  if (isToday) {
+    presentDateInput.classList.add("is-current-date");
+    if (pulseDot) pulseDot.style.display = "inline-block";
+    if (presentDateLabel) {
+      presentDateLabel.textContent = `${formatShortDate(today)}`;
+    }
+    if (liveIndicator) {
+      liveIndicator.classList.remove("custom-mode");
+    }
+    if (presentBadge) {
+      presentBadge.textContent = "Current";
+      presentBadge.className = "label-badge current";
+    }
+  } else {
+    presentDateInput.classList.remove("is-current-date");
+    if (pulseDot) pulseDot.style.display = "none";
+    const selectedDate = parseDate(presentDateInput.value);
+    if (presentDateLabel) {
+      presentDateLabel.textContent = selectedDate
+        ? `Custom: ${formatShortDate(selectedDate)}`
+        : "Custom Present Date";
+    }
+    if (liveIndicator) {
+      liveIndicator.classList.add("custom-mode");
+    }
+    if (presentBadge) {
+      presentBadge.textContent = "Custom";
+      presentBadge.className = "label-badge custom";
+    }
+  }
+
+  if (mobileTodayTag) {
+    mobileTodayTag.textContent = formatShortDate(today);
+  }
+}
+
+// Set Present Date to Today
+function setPresentDateToToday() {
+  presentDateInput.value = getTodayFormatted();
+  updatePresentDateUI();
+  calculate();
 }
 
 // Number of days between two dates
@@ -115,8 +176,8 @@ function calculate() {
     weeks.textContent = "0";
     days.textContent = "0";
     months.textContent = "0";
-    years.textContent = "0";
-    calendarResult.innerHTML = "<strong>Today!</strong> There is no difference between the dates.";
+    const isSameAsToday = startDateInput.value === getTodayFormatted();
+    calendarResult.innerHTML = `<strong>${isSameAsToday ? "Today!" : "Same day!"}</strong> There is no difference between the dates.`;
     saveCurrentDateToStorage();
     renderSavedList();
     return;
@@ -313,10 +374,28 @@ function closeSidebar() {
 // Event Listeners
 startDateInput.addEventListener("input", calculate);
 startDateInput.addEventListener("change", calculate);
+startDateInput.addEventListener("click", () => {
+  try {
+    if (typeof startDateInput.showPicker === "function") {
+      startDateInput.showPicker();
+    }
+  } catch (e) {}
+});
 
-setTodayBtn.addEventListener("click", () => {
-  startDateInput.value = presentDateInput.value;
+presentDateInput.addEventListener("input", () => {
+  updatePresentDateUI();
   calculate();
+});
+presentDateInput.addEventListener("change", () => {
+  updatePresentDateUI();
+  calculate();
+});
+presentDateInput.addEventListener("click", () => {
+  try {
+    if (typeof presentDateInput.showPicker === "function") {
+      presentDateInput.showPicker();
+    }
+  } catch (e) {}
 });
 
 saveSessionBtn.addEventListener("click", handleSaveDate);
@@ -332,10 +411,7 @@ function init() {
   const todayFormatted = formatDate(today);
 
   presentDateInput.value = todayFormatted;
-  presentDateLabel.textContent = formatShortDate(today);
-  if (mobileTodayTag) {
-    mobileTodayTag.textContent = formatShortDate(today);
-  }
+  updatePresentDateUI();
 
   // Load from localStorage or set default
   const hasSaved = loadCurrentDateFromStorage();

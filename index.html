@@ -40,18 +40,18 @@
         </div>
 
         <div class="input-group">
-          <label for="presentDate">Present Date (Current)</label>
-          <input type="date" id="presentDate" readonly />
-          <div class="live-indicator">
-            <span class="pulse-dot"></span>
+          <div class="label-row">
+            <label for="presentDate">Date</label>
+            <!-- <span class="label-badge current" id="presentBadge">Current</span> -->
+          </div>
+          <input type="date" id="presentDate" />
+          <div class="live-indicator" id="liveIndicator">
+            <span class="pulse-dot" id="pulseDot"></span>
             <span id="presentDateLabel">Live Present Date</span>
           </div>
         </div>
 
-        <div class="btn-row">
-          <button class="btn btn-today" id="setTodayBtn">↻ Set to Today</button>
-          <button class="btn btn-save" id="saveSessionBtn">💾 Save</button>
-        </div>
+        <button class="btn btn-save" id="saveSessionBtn">💾 Save</button>
       </div>
 
       <!-- Saved Sessions (LocalStorage) -->
@@ -126,9 +126,9 @@
 
           </div>
 
-          <div class="footer">
+          <!-- <div class="footer">
             Auto-synced with present date & stored in localStorage
-          </div>
+          </div> -->
 
         </section>
       </div>
