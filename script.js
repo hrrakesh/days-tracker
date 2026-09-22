@@ -2,13 +2,13 @@
 const STORAGE_START_DATE_KEY = "days_tracker_start_date";
 const STORAGE_SAVED_DATES_KEY = "days_tracker_saved_dates";
 
-// Left Sidebar Elements
-const startDateInput = document.getElementById("startDate");
+// Left Sidebar Elements (Two editable date inputs with calendar pickers)
 const presentDateInput = document.getElementById("presentDate");
-const presentDateLabel = document.getElementById("presentDateLabel");
-const presentBadge = document.getElementById("presentBadge");
-const pulseDot = document.getElementById("pulseDot");
-const liveIndicator = document.getElementById("liveIndicator");
+const presentDatePicker = document.getElementById("presentDatePicker");
+const presentCalBtn = document.getElementById("presentCalBtn");
+const startDateInput = document.getElementById("startDate");
+const startDatePicker = document.getElementById("startDatePicker");
+const startCalBtn = document.getElementById("startCalBtn");
 const mobileTodayTag = document.getElementById("mobileTodayTag");
 const saveSessionBtn = document.getElementById("saveSessionBtn");
 const clearSessionsBtn = document.getElementById("clearSessionsBtn");
@@ -32,19 +32,67 @@ const months = document.getElementById("months");
 const years = document.getElementById("years");
 const calendarResult = document.getElementById("calendarResult");
 
-// Format Date as YYYY-MM-DD
-function formatDate(date) {
+// Format Date as DD-MM-YYYY (User-facing standard)
+function formatDateDMY(date) {
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
+// Format Date as YYYY-MM-DD (Required by HTML5 <input type="date">)
+function formatDateISO(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
-// Convert input date safely to local Date
+// Convert input date safely to local Date (prioritizes DD-MM-YYYY, DD/MM/YYYY, then YYYY-MM-DD)
 function parseDate(value) {
   if (!value) return null;
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day);
+  const str = String(value).trim();
+  if (!str) return null;
+
+  // 1. Format: DD-MM-YYYY or DD/MM/YYYY or DD.MM.YYYY
+  let match = str.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/);
+  if (match) {
+    const d = parseInt(match[1], 10);
+    const m = parseInt(match[2], 10);
+    const y = parseInt(match[3], 10);
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      return new Date(y, m - 1, d);
+    }
+  }
+
+  // 2. Format: YYYY-MM-DD or YYYY/MM/DD (from native calendar picker)
+  match = str.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/);
+  if (match) {
+    const y = parseInt(match[1], 10);
+    const m = parseInt(match[2], 10);
+    const d = parseInt(match[3], 10);
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      return new Date(y, m - 1, d);
+    }
+  }
+
+  // 3. Fallback to Date.parse
+  const timestamp = Date.parse(str);
+  if (!isNaN(timestamp)) {
+    const dt = new Date(timestamp);
+    if (dt.getFullYear() >= 1000) return dt;
+  }
+
+  return null;
+}
+
+// Sync text input (DD-MM-YYYY) with its calendar picker (YYYY-MM-DD)
+function syncTextToPicker(textInput, picker) {
+  if (!picker || !textInput) return;
+  const dt = parseDate(textInput.value);
+  if (dt) {
+    picker.value = formatDateISO(dt);
+  }
 }
 
 // Format short date for display
@@ -57,62 +105,16 @@ function formatShortDate(date) {
   });
 }
 
-// Get today formatted as YYYY-MM-DD
+// Get today formatted as DD-MM-YYYY
 function getTodayFormatted() {
-  return formatDate(new Date());
+  return formatDateDMY(new Date());
 }
 
-// Check if presentDateInput is set to current date
-function isPresentDateToday() {
-  return presentDateInput.value === getTodayFormatted();
-}
-
-// Update Present Date UI (Blinking Dot, Label, Badge)
-function updatePresentDateUI() {
-  const today = new Date();
-  const isToday = isPresentDateToday();
-
-  if (isToday) {
-    presentDateInput.classList.add("is-current-date");
-    if (pulseDot) pulseDot.style.display = "inline-block";
-    if (presentDateLabel) {
-      presentDateLabel.textContent = `${formatShortDate(today)}`;
-    }
-    if (liveIndicator) {
-      liveIndicator.classList.remove("custom-mode");
-    }
-    if (presentBadge) {
-      presentBadge.textContent = "Current";
-      presentBadge.className = "label-badge current";
-    }
-  } else {
-    presentDateInput.classList.remove("is-current-date");
-    if (pulseDot) pulseDot.style.display = "none";
-    const selectedDate = parseDate(presentDateInput.value);
-    if (presentDateLabel) {
-      presentDateLabel.textContent = selectedDate
-        ? `Custom: ${formatShortDate(selectedDate)}`
-        : "Custom Present Date";
-    }
-    if (liveIndicator) {
-      liveIndicator.classList.add("custom-mode");
-    }
-    if (presentBadge) {
-      presentBadge.textContent = "Custom";
-      presentBadge.className = "label-badge custom";
-    }
-  }
-
+// Update mobile today tag
+function updateTodayTag() {
   if (mobileTodayTag) {
-    mobileTodayTag.textContent = formatShortDate(today);
+    mobileTodayTag.textContent = formatShortDate(new Date());
   }
-}
-
-// Set Present Date to Today
-function setPresentDateToToday() {
-  presentDateInput.value = getTodayFormatted();
-  updatePresentDateUI();
-  calculate();
 }
 
 // Number of days between two dates
@@ -143,20 +145,20 @@ function calendarDifference(start, end) {
 
 // Main Calculate Function
 function calculate() {
-  if (!startDateInput.value || !presentDateInput.value) {
-    direction.textContent = "Select a date to calculate";
+  const first = parseDate(startDateInput.value);
+  const second = parseDate(presentDateInput.value);
+
+  if (!first || !second) {
+    direction.textContent = "Enter or choose valid dates to calculate";
     mainNumber.textContent = "—";
     mainLabel.textContent = "Days";
     weeks.textContent = "—";
     days.textContent = "—";
     months.textContent = "—";
     years.textContent = "—";
-    calendarResult.textContent = "Choose a date to see the result.";
+    calendarResult.textContent = "Enter or choose valid dates to see the result.";
     return;
   }
-
-  const first = parseDate(startDateInput.value);
-  const second = parseDate(presentDateInput.value);
 
   let earlier;
   let later;
@@ -176,7 +178,7 @@ function calculate() {
     weeks.textContent = "0";
     days.textContent = "0";
     months.textContent = "0";
-    const isSameAsToday = startDateInput.value === getTodayFormatted();
+    const isSameAsToday = formatDateDMY(first) === getTodayFormatted();
     calendarResult.innerHTML = `<strong>${isSameAsToday ? "Today!" : "Same day!"}</strong> There is no difference between the dates.`;
     saveCurrentDateToStorage();
     renderSavedList();
@@ -228,9 +230,10 @@ function calculate() {
 
 // LocalStorage: Save and Load Active Date
 function saveCurrentDateToStorage() {
-  if (startDateInput.value) {
+  const dt = parseDate(startDateInput.value);
+  if (dt) {
     try {
-      localStorage.setItem(STORAGE_START_DATE_KEY, startDateInput.value);
+      localStorage.setItem(STORAGE_START_DATE_KEY, formatDateDMY(dt));
     } catch (e) {}
   }
 }
@@ -239,8 +242,11 @@ function loadCurrentDateFromStorage() {
   try {
     const saved = localStorage.getItem(STORAGE_START_DATE_KEY);
     if (saved) {
-      startDateInput.value = saved;
-      return true;
+      const dt = parseDate(saved);
+      if (dt) {
+        startDateInput.value = formatDateDMY(dt);
+        return true;
+      }
     }
   } catch (e) {}
   return false;
@@ -265,8 +271,9 @@ function setSavedSessions(sessions) {
 }
 
 function handleSaveDate() {
-  const dateVal = startDateInput.value;
-  if (!dateVal) return;
+  const dt = parseDate(startDateInput.value);
+  if (!dt) return;
+  const dateVal = formatDateDMY(dt);
 
   const sessions = getSavedSessions();
   const exists = sessions.find((s) => s.date === dateVal);
@@ -318,16 +325,17 @@ function renderSavedList() {
     const itemDate = parseDate(s.date);
     const diff = itemDate ? totalDaysBetween(itemDate, today) : 0;
     const isPast = itemDate && itemDate <= today;
+    const formattedItemDate = itemDate ? formatDateDMY(itemDate) : s.date;
 
     const item = document.createElement("div");
     item.className = "saved-item";
-    if (s.date === startDateInput.value) {
+    if (formattedItemDate === startDateInput.value) {
       item.classList.add("active");
     }
 
     const label = document.createElement("span");
     label.className = "saved-date-text";
-    label.textContent = s.date;
+    label.textContent = formattedItemDate;
 
     const meta = document.createElement("div");
     meta.className = "saved-meta";
@@ -349,7 +357,8 @@ function renderSavedList() {
     item.appendChild(meta);
 
     item.addEventListener("click", () => {
-      startDateInput.value = s.date;
+      startDateInput.value = formattedItemDate;
+      syncTextToPicker(startDateInput, startDatePicker);
       calculate();
       if (window.innerWidth <= 860) {
         closeSidebar();
@@ -371,32 +380,97 @@ function closeSidebar() {
   sidebarBackdrop.classList.remove("active");
 }
 
-// Event Listeners
-startDateInput.addEventListener("input", calculate);
-startDateInput.addEventListener("change", calculate);
-startDateInput.addEventListener("click", () => {
-  try {
-    if (typeof startDateInput.showPicker === "function") {
-      startDateInput.showPicker();
-    }
-  } catch (e) {}
-});
-
+// Event Listeners for First Date (Today Date)
 presentDateInput.addEventListener("input", () => {
-  updatePresentDateUI();
+  syncTextToPicker(presentDateInput, presentDatePicker);
   calculate();
 });
 presentDateInput.addEventListener("change", () => {
-  updatePresentDateUI();
+  const dt = parseDate(presentDateInput.value);
+  if (dt) {
+    presentDateInput.value = formatDateDMY(dt);
+    syncTextToPicker(presentDateInput, presentDatePicker);
+  }
   calculate();
 });
-presentDateInput.addEventListener("click", () => {
-  try {
-    if (typeof presentDateInput.showPicker === "function") {
-      presentDateInput.showPicker();
+
+if (presentDatePicker) {
+  presentDatePicker.addEventListener("input", () => {
+    if (presentDatePicker.value) {
+      const dt = parseDate(presentDatePicker.value);
+      if (dt) presentDateInput.value = formatDateDMY(dt);
+      calculate();
     }
-  } catch (e) {}
+  });
+  presentDatePicker.addEventListener("change", () => {
+    if (presentDatePicker.value) {
+      const dt = parseDate(presentDatePicker.value);
+      if (dt) presentDateInput.value = formatDateDMY(dt);
+      calculate();
+    }
+  });
+}
+
+// Event Listeners for Second Date (Other Date)
+startDateInput.addEventListener("input", () => {
+  syncTextToPicker(startDateInput, startDatePicker);
+  calculate();
 });
+startDateInput.addEventListener("change", () => {
+  const dt = parseDate(startDateInput.value);
+  if (dt) {
+    startDateInput.value = formatDateDMY(dt);
+    syncTextToPicker(startDateInput, startDatePicker);
+  }
+  calculate();
+});
+
+if (startDatePicker) {
+  startDatePicker.addEventListener("input", () => {
+    if (startDatePicker.value) {
+      const dt = parseDate(startDatePicker.value);
+      if (dt) startDateInput.value = formatDateDMY(dt);
+      calculate();
+    }
+  });
+  startDatePicker.addEventListener("change", () => {
+    if (startDatePicker.value) {
+      const dt = parseDate(startDatePicker.value);
+      if (dt) startDateInput.value = formatDateDMY(dt);
+      calculate();
+    }
+  });
+}
+
+// Open calendar picker instantly
+function openCalendar(picker) {
+  if (!picker) return;
+  try {
+    if (typeof picker.showPicker === "function") {
+      picker.showPicker();
+      return;
+    }
+  } catch (err) {}
+  try {
+    picker.focus();
+  } catch (err) {}
+}
+
+if (presentCalBtn) {
+  presentCalBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    syncTextToPicker(presentDateInput, presentDatePicker);
+    openCalendar(presentDatePicker);
+  });
+}
+
+if (startCalBtn) {
+  startCalBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    syncTextToPicker(startDateInput, startDatePicker);
+    openCalendar(startDatePicker);
+  });
+}
 
 saveSessionBtn.addEventListener("click", handleSaveDate);
 clearSessionsBtn.addEventListener("click", clearAllSavedSessions);
@@ -408,18 +482,22 @@ sidebarBackdrop.addEventListener("click", closeSidebar);
 // Initialize
 function init() {
   const today = new Date();
-  const todayFormatted = formatDate(today);
 
-  presentDateInput.value = todayFormatted;
-  updatePresentDateUI();
+  // First input defaults to today formatted as DD-MM-YYYY
+  presentDateInput.value = formatDateDMY(today);
+  if (presentDatePicker) presentDatePicker.value = formatDateISO(today);
 
-  // Load from localStorage or set default
+  // Second input loaded from storage or defaults to Jan 1st of current year in DD-MM-YYYY
   const hasSaved = loadCurrentDateFromStorage();
   if (!hasSaved) {
-    // Default to Jan 1st of current year
-    startDateInput.value = `${today.getFullYear()}-01-01`;
+    const jan1 = new Date(today.getFullYear(), 0, 1);
+    startDateInput.value = formatDateDMY(jan1);
+    if (startDatePicker) startDatePicker.value = formatDateISO(jan1);
+  } else {
+    syncTextToPicker(startDateInput, startDatePicker);
   }
 
+  updateTodayTag();
   calculate();
   renderSavedList();
 }

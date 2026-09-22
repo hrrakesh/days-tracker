@@ -26,7 +26,7 @@
           <div class="brand-icon">📅</div>
           <div>
             <h2>Days Tracker</h2>
-            <p>From Start Date to Today</p>
+            <p>Date Difference Calculator</p>
           </div>
         </div>
         <button class="close-btn" id="sidebarCloseBtn" aria-label="Close">✕</button>
@@ -34,25 +34,17 @@
 
       <!-- Date Section -->
       <div class="sidebar-section">
-         <div class="input-group">
-          <div class="label-row">
-            <label for="presentDate"></label>
-            <!-- <span class="label-badge current" id="presentBadge">Current</span> -->
-          </div>
-          <input type="date" id="presentDate" />
-      
-          <div class="live-indicator" id="liveIndicator">
-            <!-- <span class="pulse-dot" id="pulseDot"></span> -->
-            <!-- <span id="presentDateLabel">Live Present Date</span> -->
-          </div>
-        </div>
-        <div class="input-group">
-          <label for="startDate"></label>
-          <input type="date" id="startDate" />
+        <div class="date-box">
+          <input type="text" id="presentDate" class="date-input" placeholder="DD-MM-YYYY" autocomplete="off" />
+          <button type="button" class="cal-btn" id="presentCalBtn" title="Choose from calendar" aria-label="Choose date from calendar">📅</button>
+          <input type="date" id="presentDatePicker" class="picker-hidden" tabindex="-1" aria-hidden="true" />
         </div>
 
-       
-        
+        <div class="date-box">
+          <input type="text" id="startDate" class="date-input" placeholder="DD-MM-YYYY" autocomplete="off" />
+          <button type="button" class="cal-btn" id="startCalBtn" title="Choose from calendar" aria-label="Choose date from calendar">📅</button>
+          <input type="date" id="startDatePicker" class="picker-hidden" tabindex="-1" aria-hidden="true" />
+        </div>
 
         <button class="btn btn-save" id="saveSessionBtn">💾 Save</button>
       </div>
@@ -82,7 +74,7 @@
             <div class="icon">📅</div>
             <h1>Days Tracker</h1>
             <p class="subtitle" id="subtitle">
-              Calculated from Start Date to Present Date
+              Date Difference Calculator
             </p>
           </header>
 
